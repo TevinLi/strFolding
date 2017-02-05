@@ -1,13 +1,26 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<meta charset="UTF-8">
-		<title>字符串“折叠”</title>
-		<script src="../src/strfolding.js"></script>
-	</head>
-	<body>
-	    <div id="str"></div>
-		<script>
-		</script>
-	</body>
+
+    <head>
+        <meta charset="UTF-8">
+        <title>字符串“折叠”</title>
+        <script src="jquery-2.2.4.min.js"></script>
+        <script src="../src/strfolding.js"></script>
+    </head>
+
+    <body>
+        <div id="str"></div>
+        <script>
+            $(function() {
+                var sf = new StrFolding();
+                $.get('json.txt', function(data) {
+                    var source = JSON.stringify(data);
+                    //console.log(source);
+                    var enc = sf.encode(source);
+                    console.log(enc);
+                }, 'json');
+            });
+        </script>
+    </body>
+
 </html>
