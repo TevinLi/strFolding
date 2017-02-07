@@ -9,13 +9,6 @@
 
     'use strict';
 
-    /* 特殊符号字典
-     * ⠁⠂⠃⠄⠅⠆⠇⠈⠉⠊⠋⠌⠍⠎⠏⠐⠑⠒⠓⠔⠕⠖⠗⠘⠙⠚⠛⠜⠝⠞⠟⠠⠡⠢⠣⠤⠥⠦⠧⠨⠩⠪⠫⠬⠭⠮⠯⠰⠱⠲⠳⠴⠵⠶⠷⠸⠹⠺⠻⠼⠽⠾⠿⡀
-     * ⡁⡂⡃⡄⡅⡆⡇⡈⡉⡊⡋⡌⡍⡎⡏⡐⡑⡒⡓⡔⡕⡖⡗⡘⡙⡚⡛⡜⡝⡞⡟⡠⡡⡢⡣⡤⡥⡦⡧⡨⡩⡪⡫⡬⡭⡮⡯⡰⡱⡲⡳⡴⡵⡶⡷⡸⡹⡺⡻⡼⡽⡾⡿⢀
-     * ⢁⢂⢃⢄⢅⢆⢇⢈⢉⢊⢋⢌⢍⢎⢏⢐⢑⢒⢓⢔⢕⢖⢗⢘⢙⢚⢛⢜⢝⢞⢟⢠⢡⢢⢣⢤⢥⢦⢧⢨⢩⢪⢫⢬⢭⢮⢯⢰⢱⢲⢳⢴⢵⢶⢷⢸⢹⢺⢻⢼⢽⢾⢿⣀
-     * ⣁⣂⣃⣄⣅⣆⣇⣈⣉⣊⣋⣌⣍⣎⣏⣐⣑⣒⣓⣔⣕⣖⣗⣘⣙⣚⣛⣜⣝⣞⣟⣠⣡⣢⣣⣤⣥⣦⣧⣨⣩⣪⣫⣬⣭⣮⣯⣰⣱⣲⣳⣴⣵⣶⣷⣸⣹⣺⣻⣼⣽⣾⣿
-     */
-
     var SF = function () {
         this._data = {
             list: [],
@@ -125,31 +118,82 @@
 
     /* 工具 */
 
-    //标记转编号
-    SF.prototype._wordsLibToNum = function (words) {
-        if (words.length != 2) {
-            return;
+    //字母转数字，用于标记转序号
+    SF.prototype._letterToNum = function (letter) {
+        //数字仅转类型
+        if (/[0-9]/.test(letter)) {
+            return parseInt(letter);
         }
-        var code1 = words.substr(0, 1).charCodeAt() - 10241;
-        var code2 = words.substr(1, 1).charCodeAt() - 10241;
-        return code1 * 255 + code2;
+        //英文大写字母
+        else if (/[A-Z]/.test(letter)) {
+            return letter.charCodeAt(0) - 55;
+        }
+        //英文小写字母
+        else if (/[a-z]/.test(letter)) {
+            return letter.charCodeAt(0) - 61;
+        }
+        //非英文字母
+        else {
+            return letter.charCodeAt(0) - 194;
+        }
     };
 
-    //编号转标记
-    SF.prototype._numToWordsLib = function (num) {
-        if (num > 65024) {
-            return;
+    //标记转序号
+    SF.prototype._codeToIndex = function (code) {
+        if (code.length == 3) {
+            code = code.substr(1);
+        } else if (code.length != 2) {
+            return -1;
         }
-        var code2 = num % 255;
-        var code1 = (num - code2) / 255;
-        code2 = String.fromCharCode(code2 + 10241);
-        code1 = String.fromCharCode(code1 + 10241);
-        return code1 + code2;
+        var code1 = this._letterToNum(code.substr(0, 1));
+        var code2 = this._letterToNum(code.substr(1, 1));
+        //console.log(code1, code2);
+        return code1 * 62 + code2;
+    };
+
+    //数字转字母，用于序号转标记
+    SF.prototype._numToLetter = function (num) {
+        //console.log(num);
+        // 0 ~ 9 仅转类型
+        if (num <= 9) {
+            return num + '';
+        }
+        // 10 ~ 35 转英文大写字母
+        else if (num <= 35) {
+            return String.fromCharCode(num + 55);
+        }
+        // 36 ~ 61 转英文小写字母
+        else if (num <= 61) {
+            return String.fromCharCode(num + 61);
+        }
+        // 62 ~ 15747 转非英文的字母
+        else {
+            return String.fromCharCode(num + 194);
+        }
+    };
+
+    //序号转标记
+    SF.prototype._indexToCode = function (index) {
+        //限制序号范围 0 ~ 15747，超出不再计算
+        if (index > 15747 && index < 0) {
+            return '';
+        }
+        //转换说明
+        //序号范围在 0 ~ 3843 时，转换为 2 个单字节的标记
+        //    其中，首位次位皆由数字英文字母组成，相当于 62 进制的两位数
+        //序号范围在 3844 ~ 15747 时，转换为一个 2 字节和一个单字节的标记
+        //    其中，首位由拉丁等非英文的字母组成，次位由数字英文字母组成，次位仍然视为 62 进制
+        var code1, code2;
+        code2 = index % 62;
+        code1 = this._numToLetter((index - code2) / 62);
+        code2 = this._numToLetter(code2);
+        //转义符号+2位标记
+        return '$' + code1 + code2;
     };
 
     //替换结果
     SF.prototype._replaceResult = function (str, num) {
-        var code = this._numToWordsLib(num);
+        var code = this._indexToCode(num);
         this._data.result = this._data.result.replace(new RegExp(str, 'g'), function () {
             return code;
         });
@@ -157,8 +201,8 @@
 
     //压缩数据统计
     SF.prototype._statistics = function (startTime, source, result) {
-        var sLong = source.replace(/[\u4e00-\u9fa5]/g, 'aa').length;
-        var rLong = result.replace(/[\u4e00-\u9fa5]/g, 'aa').length;
+        var sLong = source/*.replace(/[^\u0000-\u00ff]/g, 'aa')*/.length;
+        var rLong = result/*.replace(/[^\u0000-\u00ff]/g, 'aa')*/.length;
         console.log(sLong, rLong, (rLong / sLong * 100).toFixed(2) + '%', Date.now() - startTime + 'ms');
     };
 
