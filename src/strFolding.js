@@ -28,7 +28,7 @@
         if (!list && !list2C) {
             return true;
         }
-        //如果单字替换符相同字符过多
+        //如果单字替换符相同字符过多，不再执行压缩
         if (list2C && list2C > 20) {
             return false;
         }
@@ -40,7 +40,7 @@
             if (typeof library[item] == 'undefined') {
                 library[item] = 1;
                 num = this._data.list.push(item);
-                this._replaceResult(item, num - 1);
+                this._replaceResult(item, num - 1, true);
             }
         }
         return true;
@@ -82,7 +82,7 @@
         wordsTemp.sort(function (a, b) {
             return a.key.length > b.key.length ? -1 : 1;
         });
-        console.log(JSON.stringify(wordsTemp));
+        //console.log(JSON.stringify(wordsTemp));
         //处理
         for (var j = 0, item, num; item = wordsTemp[j]; j++) {
             num = this._data.list.push(item.key) - 1;
@@ -270,9 +270,8 @@
         var num;
         for (i = 0; item = list[i]; i++) {
             num = this._data.list.push(item) - 1;
-            this._replaceResult(item, num);
+            this._replaceResult(item, num) || this._data.list.pop();
         }
-        num = i = item = null;
     };
 
     //转换数字、字母
@@ -305,7 +304,7 @@
         var num;
         for (var j = 0; item = list[j]; j++) {
             num = this._data.list.push(item);
-            this._replaceResult(item, num - 1);
+            this._replaceResult(item, num - 1) || this._data.list.pop();
         }
         num = item = j = null;
     };
@@ -383,11 +382,29 @@
     };
 
     //替换结果
-    SF.prototype._replaceResult = function (str, num) {
+    SF.prototype._replaceResult = function (str, num, foce) {
         var code = this._indexToCode(num);
-        this._data.result = this._data.result.replace(new RegExp(str, 'g'), function () {
+        //如果未产生替换符，不工作
+        if (!code) {
+            return false;
+        }
+        //替换
+        var count = 0;
+        var result = this._data.result.replace(new RegExp(str, 'g'), function () {
+            count++;
             return code;
         });
+        //强制执行
+        if (foce) {
+            this._data.result = result;
+            return true;
+        }
+        //只有当 字符长度超过3个 或者 重复次数超过3次 的词，才真正替换
+        if (count >= 2 && (str.length >= 3 || count >= 3)) {
+            this._data.result = result;
+            return true;
+        }
+        return false;
     };
 
     //压缩数据统计
@@ -413,7 +430,7 @@
             this._unDuplicateChinese();
             this._transDigitalLetter();
         } else {
-            throw new Error('StrFolding.js: 太多的非英文字母！本压缩工具仅针对中英文使用。')
+            throw new Error('StrFolding.js: 太多的非英文字母！本压缩工具仅针对中英文文本使用。')
         }
         //拼装结果
         var result = this._data.result + '|||' + this._data.list.join(',');
