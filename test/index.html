@@ -5,7 +5,7 @@
         <meta charset="UTF-8">
         <title>字符串“折叠”</title>
         <script src="jquery-2.2.4.min.js"></script>
-        <script src="../src/strfolding.js"></script>
+        <script src="../src/strFolding.js"></script>
     </head>
 
     <body>
@@ -16,10 +16,10 @@
             }
         </style>
         <script type="text/javascript">
-        	/*$(function() {
+        	$(function() {
                 //字符串表
                 var i = 0, codes = '';
-                while (i < 3000) {
+                while (i < 6000) {
                     if(i == 128 || i == 2047) {
                         codes += '<br><br><br>';
                     }
@@ -27,7 +27,7 @@
                     i++;
                 }
                 $('#str').html(codes);
-        	});*/
+        	});
         </script>
         <script>
             $(function() {
@@ -39,7 +39,6 @@
                     console.log(enc);
                 }, 'text');
             });
-            var sf = new StrFolding();
         </script>
     </body>
 

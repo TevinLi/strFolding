@@ -1,7 +1,9 @@
 /**
- * string-folding.js
- * @version 0.0.3
+ * strFolding.js
+ * @version 0.0.4
  * @author Tevin
+ * @see {@link https://github.com/TevinLi/strFolding}
+ * @license MIT - Released under the MIT license.
  */
 
 ;
@@ -12,6 +14,7 @@
     var SF = function () {
         this._data = {
             list: [],
+            list2C: [],
             source: '',
             result: ''
         };
@@ -19,13 +22,20 @@
 
     //预转换
     SF.prototype._preTransition = function () {
-        //如果存在替换符相同格式的字符，直接入字典并替换
-        var list = this._data.result.match(/[\u0100-\u01bf][0-9A-Za-z]/g);
-        if (!list) {
-            return;
+        var list = this._data.result.match(/[\u0100-\u014f][0-9A-Za-z]/g);
+        var list2C = this._data.result.match(/[\u014f-\u07e0]/g);
+        //如果不存在替换符相同字符
+        if (!list && !list2C) {
+            return true;
         }
+        //如果单字替换符相同字符过多
+        if (list2C && list2C > 20) {
+            return false;
+        }
+        //如果存在替换符相同格式的字符，直接入字典并替换
         var library = {},
             num;
+        list = list.concat(list2C || []);
         for (var i = 0, item; item = list[i]; i++) {
             if (typeof library[item] == 'undefined') {
                 library[item] = 1;
@@ -33,6 +43,7 @@
                 this._replaceResult(item, num - 1);
             }
         }
+        return true;
     };
 
     //基于热度分析字典处理重复词
@@ -358,8 +369,8 @@
 
     //序号转标记
     SF.prototype._indexToCode = function (index) {
-        //限制序号范围 0 ~ 11903，超出不再计算
-        if (index < 0 && index > 11903) {
+        //限制序号范围，超出不再计算
+        if (index < 0 && index > 4959) {
             return '';
         }
         //转换为一个 2 字节和一个单字节的标记
@@ -393,14 +404,17 @@
      */
     SF.prototype.encode = function (source) {
         if (typeof source != 'string') {
-            throw new Error('StrFolding: The parameter must be a string!');
+            throw new Error('StrFolding.js: 参数必须为字符串!');
         }
         var startTime = Date.now();
         this._data.source = this._data.result = source;
-        this._preTransition();
-        this._heatChineseWords();
-        this._unDuplicateChinese();
-        this._transDigitalLetter();
+        if (this._preTransition()) {
+            this._heatChineseWords();
+            this._unDuplicateChinese();
+            this._transDigitalLetter();
+        } else {
+            throw new Error('StrFolding.js: 太多的非英文字母！本压缩工具仅针对中英文使用。')
+        }
         //拼装结果
         var result = this._data.result + '|||' + this._data.list.join(',');
         //统计效率
