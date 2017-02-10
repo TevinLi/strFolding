@@ -14,7 +14,7 @@
     var SF = function () {
         this._data = {
             list: [],
-            list2C: [],
+            lib2C: [],
             source: '',
             result: ''
         };
@@ -40,7 +40,7 @@
             if (typeof library[item] == 'undefined') {
                 library[item] = 1;
                 num = this._data.list.push(item);
-                this._replaceResult(item, num - 1, true);
+                this._replaceResult(item, num - 1, 'force');
             }
         }
         return true;
@@ -72,7 +72,6 @@
         wordsData.wordsLv6 = this._mergeEtyma(wordsData.wordsLv5, wordsLv2, content);
         wordsData.wordsLv7 = this._mergeEtyma(wordsData.wordsLv6, wordsLv2, content);
         wordsData.wordsLv8 = this._mergeEtyma(wordsData.wordsLv7, wordsLv2, content);
-        wordsLv2 = content = null;
         //词根包容计算
         var wordsTemp = this._charContains(wordsData.wordsLv3, wordsData.wordsLv4);
         wordsTemp = this._charContains(wordsTemp, wordsData.wordsLv5);
@@ -86,7 +85,11 @@
         //处理
         for (var j = 0, item, num; item = wordsTemp[j]; j++) {
             num = this._data.list.push(item.key) - 1;
-            this._replaceResult(item.key, num);
+            this._replaceResult(item.key, num) || this._data.list.pop();
+        }
+        for (i = 0; item = wordsLv2[i]; i++) {
+            num = this._data.lib2C.push(item.key) - 1;
+            this._replaceResult(item.key, num, 'single') || this._data.lib2C.pop();
         }
     };
 
@@ -100,8 +103,8 @@
         var extStr = '\u4e00-\u4e0d\u4e0f-\u4e13\u4e15-\u4e4a\u4e4c-\u4e85\u4e87-\u4ee4\u4ee6-' +
             '\u4f3b\u4f3d-\u5727\u5729-\u572f\u5731-\u5f96\u5f98-\u662e\u6630-\u7683\u7685-\u773f\u7741-' +
             '\u800b\u800d-\u8fc6\u8fc8-\u9fa5';
-        //至少3位汉字，最多35个，记一个汉字段
-        var list = this._data.result.match(new RegExp('[' + extStr + ']{3,35}', 'g'));
+        //至少2位汉字，最多35个，记一个汉字段
+        var list = this._data.result.match(new RegExp('[' + extStr + ']{2,35}', 'g'));
         if (!list || list.length <= 9) {
             return null;
         }
@@ -242,9 +245,9 @@
         return tempList;
     };
 
-    //基于自然分段处理重复的字段
+    //基于非汉字分段处理重复的字段
     SF.prototype._unDuplicateChinese = function () {
-        var that = this, i, item, library = {};
+        var that = this, i, item, library = {}, lib, list2C = [];
         var list = this._extChinese();
         //计算重复次数
         for (i = 0; item = list[i]; i++) {
@@ -256,15 +259,29 @@
         }
         list.length = 0;
         //丢弃仅一次出现的词
-        for (var lib in library) {
+        for (lib in library) {
             if (library.hasOwnProperty(lib) && library[lib] > 1) {
-                list.push(lib);
+                //多字字符串
+                if (lib.length > 2) {
+                    list.push(lib);
+                }
+                //两汉字字符串
+                else if (library[lib] > 2) {
+                    list2C.push({
+                        key: lib,
+                        num: library[lib]
+                    });
+                }
             }
         }
         library = lib = i = item = null;
-        //按从长到短排序
+        //多字列表按从长到短排序
         list.sort(function (a, b) {
             return a.length > b.length ? -1 : 1;
+        });
+        //两字列表按次数排序
+        list2C.sort(function (a, b) {
+            return a.num > b.num ? -1 : 1;
         });
         //处理
         var num;
@@ -272,6 +289,11 @@
             num = this._data.list.push(item) - 1;
             this._replaceResult(item, num) || this._data.list.pop();
         }
+        for (i = 0; item = list2C[i]; i++) {
+            num = this._data.lib2C.push(item.key) - 1;
+            this._replaceResult(item.key, num, 'single') || this._data.lib2C.pop();
+        }
+        //console.log(this._data.lib2C);
     };
 
     //转换数字、字母
@@ -367,23 +389,37 @@
     };
 
     //序号转标记
-    SF.prototype._indexToCode = function (index) {
-        //限制序号范围，超出不再计算
-        if (index < 0 && index > 4959) {
-            return '';
+    SF.prototype._indexToCode = function (index, type) {
+        if (type == 'single') {
+            if (index < 0 && index > 1713) {
+                return '';
+            }
+            return String.fromCharCode(index + 336);
+        } else {
+            //限制序号范围，超出不再计算
+            if (index < 0 && index > 4959) {
+                return '';
+            }
+            //转换为一个 2 字节和一个单字节的标记
+            //其中，首位由拉丁等非英文的字母组成，次位由数字英文字母组成，次位可视为 62 进制
+            var code1, code2;
+            code2 = index % 62;
+            code1 = this._numToLetter(2, (index - code2) / 62);
+            code2 = this._numToLetter(1, code2);
+            return code1 + code2;
         }
-        //转换为一个 2 字节和一个单字节的标记
-        //其中，首位由拉丁等非英文的字母组成，次位由数字英文字母组成，次位可视为 62 进制
-        var code1, code2;
-        code2 = index % 62;
-        code1 = this._numToLetter(2, (index - code2) / 62);
-        code2 = this._numToLetter(1, code2);
-        return code1 + code2;
     };
 
     //替换结果
-    SF.prototype._replaceResult = function (str, num, foce) {
-        var code = this._indexToCode(num);
+    SF.prototype._replaceResult = function (str, num, type) {
+        var code;
+        //双字与多字走不同转换
+        if (type == 'single') {
+            code = this._indexToCode(num, 'single');
+        } else {
+            code = this._indexToCode(num);
+        }
+        //console.log(str, code, num);
         //如果未产生替换符，不工作
         if (!code) {
             return false;
@@ -395,7 +431,7 @@
             return code;
         });
         //强制执行
-        if (foce) {
+        if (type = 'force') {
             this._data.result = result;
             return true;
         }
@@ -433,7 +469,7 @@
             throw new Error('StrFolding.js: 太多的非英文字母！本压缩工具仅针对中英文文本使用。')
         }
         //拼装结果
-        var result = this._data.result + '|||' + this._data.list.join(',');
+        var result = this._data.result + '|||' + this._data.list.join(',') + '|||' + this._data.lib2C.join(',');
         //统计效率
         this._statistics(startTime, source, result);
         //立即清理

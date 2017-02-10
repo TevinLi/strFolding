@@ -16,7 +16,7 @@
             }
         </style>
         <script type="text/javascript">
-        	$(function() {
+        	/*$(function() {
                 //字符串表
                 var i = 0, codes = '';
                 while (i < 6000) {
@@ -27,14 +27,14 @@
                     i++;
                 }
                 $('#str').html(codes);
-        	});
+        	});*/
         </script>
         <script>
             $(function() {
                 //压缩
                 var sf = new StrFolding();
-                $.get('novel.utf8.txt', function(data) {
-                    //data = JSON.stringify(JSON.parse(data));
+                $.get('json.utf8.txt', function(data) {
+                    data = JSON.stringify(JSON.parse(data));
                     var enc = sf.encode(data);
                     console.log(enc);
                 }, 'text');
