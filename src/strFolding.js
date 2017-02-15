@@ -53,8 +53,6 @@
         if (!list) {
             return;
         }
-        //抽取重复字段
-        var duplicates = this._extChineseDuplicate(list);
         //提取样本与单字
         var charsData = this._extChineseChar(list);
         //样本文
@@ -78,9 +76,6 @@
         wordsData.wordsLv8 = this._mergeEtyma(wordsData.wordsLv7, wordsLv2, content);
         //console.log(JSON.stringify(wordsData));
         //console.log(JSON.stringify(duplicates));
-        //合并
-        wordsData = this._extendList(wordsData, duplicates);
-        //console.log(JSON.stringify(wordsData));
         //词根包容计算
         var wordsTemp = this._charContains(wordsLv2, wordsData.wordsLv3);
         wordsTemp = this._charContains(wordsTemp, wordsData.wordsLv4);
@@ -233,66 +228,6 @@
         return wordsListRes;
     };
 
-    //基于非汉字分段处理重复的字段
-    SF.prototype._extChineseDuplicate = function (list) {
-        var that = this, i, item, library = {}, lib,
-            wordsDup = {
-                wordsLv2: [],
-                wordsLv3: [],
-                wordsLv4: [],
-                wordsLv5: [],
-                wordsLv6: [],
-                wordsLv7: [],
-                wordsLv8: []
-            };
-        //计算重复次数
-        for (i = 0; item = list[i]; i++) {
-            if (typeof library[item] == 'number') {
-                library[item]++;
-            } else {
-                library[item] = 1;
-            }
-        }
-        //丢弃仅一次出现的词，并分长度存储
-        for (lib in library) {
-            if (library.hasOwnProperty(lib) && library[lib] > 1) {
-                if (library[lib] >= 3 && lib.length <= 8) {
-                    wordsDup['wordsLv' + lib.length].push({
-                        key: lib,
-                        num: library[lib]
-                    });
-                }
-            }
-        }
-        return wordsDup;
-    };
-
-    //两种抽取字典合并
-    SF.prototype._extendList = function(arr1, arr2) {
-        var already = false;
-        var listTemp = [];
-        for (var k = 2; k <= 8; k++) {
-            listTemp.length = 0;
-            for (var i = 0, item2; item2 = arr2['wordsLv' + k][i]; i++) {
-                already = false;
-                for (var j = 0, item1; item1 = arr1['wordsLv' + k][j]; j++) {
-                    if (item1.key == item2.key) {
-                        item1.num = Math.max(item1.num, item2.num);
-                        already = true;
-                        break;
-                    }
-                }
-                if (!already) {
-                    //console.log(JSON.stringify(item2));
-                    listTemp.push(item2);
-                }
-            }
-            //console.log(JSON.stringify(listTemp));
-            arr1['wordsLv' + k] = arr1['wordsLv' + k].concat(listTemp);
-        }
-        return arr1;
-    };
-
     //词根包容计算
     SF.prototype._charContains = function (wordsfrom, wordsLv) {
         var tempList = [],
@@ -380,6 +315,9 @@
         var that = this;
         //至少3位才匹配
         var list = this._data.result.match(/\d+\.\d+|[a-zA-Z0-9]{3,}/g);
+        if (!list) {
+            return
+        }
         var library = {};
         //计算重复次数
         for (var i = 0, item; item = list[i]; i++) {
@@ -407,7 +345,6 @@
             num = this._data.listEN.push(item);
             this._replaceResult(item, num - 1) || this._data.listEN.pop();
         }
-        num = item = j = null;
     };
 
     //字母转数字，用于标记转序号

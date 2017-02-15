@@ -16,8 +16,8 @@
             }
         </style>
         <script type="text/javascript">
-        	/*$(function() {
-                //字符串表
+            /*
+            $(function() {
                 var i = 0, codes = '';
                 while (i < 6000) {
                     if(i == 128 || i == 2047) {
@@ -27,16 +27,17 @@
                     i++;
                 }
                 $('#str').html(codes);
-        	});*/
+        	});
+        	*/
         </script>
         <script>
+            var sf;
             $(function() {
-                //压缩
-                var sf = new StrFolding();
+                sf = new StrFolding();
                 $.get('novel.utf8.txt', function(data) {
                     //data = JSON.stringify(JSON.parse(data));
                     var enc = sf.encode(data);
-                    console.log(enc);
+                    //console.log(enc);
                 }, 'text');
             });
         </script>
