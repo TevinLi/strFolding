@@ -11,13 +11,15 @@
 
     'use strict';
 
-    var SF = function () {
+    var SF = function (opt) {
         this._data = {
             listEN: [],
             listCN: [],
             source: '',
             result: ''
         };
+        this._onEnd = opt.statistics || function () {
+            };
     };
 
     //预转换
@@ -55,8 +57,10 @@
         }
         //提取样本与单字
         var charsData = this._extChineseChar(list);
+        //console.log(charsData);
         //样本文
         var content = charsData.list2.join(',');
+        //console.log(content);
         //根据样文本提取两字词根
         var wordsLv2 = [];
         for (var i = 0, char; char = charsData.chars[i]; i++) {
@@ -118,11 +122,7 @@
             '\u4f3b\u4f3d-\u5727\u5729-\u572f\u5731-\u5f96\u5f98-\u662e\u6630-\u7683\u7685-\u773f\u7741-' +
             '\u800b\u800d-\u8fc6\u8fc8-\u9fa5';
         //至少2位汉字，最多35个，记一个汉字段
-        var list = this._data.result.match(new RegExp('[' + extStr + ']{2,35}', 'g'));
-        if (!list || list.length <= 9) {
-            return null;
-        }
-        return list;
+        return this._data.result.match(new RegExp('[' + extStr + ']{2,35}', 'g'));
     };
 
     //列队抽样，拆离成汉字单字列队
@@ -484,11 +484,45 @@
     };
 
     //压缩数据统计
-    SF.prototype._statistics = function (startTime, source, result) {
-        var sLong = source.length;
-        var rLong = result.length;
-        console.log(sLong, rLong, (rLong / sLong * 100).toFixed(2) + '%', Date.now() - startTime + 'ms');
-        console.log('en:' + this._data.listEN.length, 'cn:' + this._data.listCN.length);
+    SF.prototype._statistics = function (startTime, start, end, type) {
+        // utf8 字符长度计算
+        var byteLengthUtf8 = function (string) {
+            var byteLen = 0,
+                len = string.length,
+                temp;
+            for (var i = 0; i < len; i++) {
+                temp = string.charCodeAt(i);
+                if (temp > 2047) {
+                    byteLen += 3;
+                } else if (temp > 128) {
+                    byteLen += 2;
+                } else {
+                    byteLen++;
+                }
+            }
+            return byteLen;
+        };
+        var sLong = byteLengthUtf8(start);
+        var eLong = byteLengthUtf8(end);
+        return {
+            type: type == 1 ? 'compress' : 'decompress',
+            //基于 utf-8 的字节统计，汉字算三个字节
+            utf8: {
+                input: sLong,
+                output: eLong,
+                percent: (eLong / sLong * 100).toFixed(2) + '%'
+            },
+            //基于 utf-16 的字节统计，汉字算一个字节
+            utf16: {
+                input: start.length,
+                output: end.length,
+                percent: (end.length / start.length * 100).toFixed(2) + '%'
+            },
+            //字典数
+            libraryEnNum: this._data.listEN.length,
+            libraryCnNum: this._data.listCN.length,
+            time: Date.now() - startTime + 'ms'
+        };
     };
 
     /**
@@ -512,7 +546,7 @@
         //拼装结果
         var result = this._data.result + '|||' + this._data.listEN.join(',') + '|||' + this._data.listCN.join(',');
         //统计效率
-        this._statistics(startTime, source, result);
+        this._onEnd(this._statistics(startTime, source, result, 1));
         //立即清理
         this._data.source = this._data.result = '';
         this._data.listEN.length = this._data.listCN.length = 0;
@@ -530,6 +564,7 @@
             throw new Error('StrFolding: 输入必须为字符串！');
         }
         var that = this;
+        var startTime = Date.now();
         result = result.replace(/\|{3}([\u4e00-\u9fa5]{2,},?)*$/, function (m) {
             that._data.listCN = m.replace('|||', '').split(',');
             return '';
@@ -546,9 +581,14 @@
             this._restoreResult(j);
         }
         //console.log(this._data.listCN.length, this._data.listEN.length, this._data.listEN.join(','), this._data.listCN.join(','));
+
+        //统计效率
+        this._onEnd(this._statistics(startTime, result, this._data.result, 2));
+        //立即清理
         var re = this._data.result;
         this._data.source = this._data.result = '';
         this._data.listEN.length = this._data.listCN.length = 0;
+        //返回
         return re;
     };
 

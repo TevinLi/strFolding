@@ -33,7 +33,11 @@
         <script>
             var sf;
             $(function() {
-                sf = new StrFolding();
+                sf = new StrFolding({
+                    statistics: function(data) {
+                        console.log(JSON.stringify(data));
+                    }
+                });
                 $.get('novel.utf8.txt', function(data) {
                     //data = JSON.stringify(JSON.parse(data));
                     var enc = sf.encode(data);
