@@ -18,8 +18,7 @@
             source: '',
             result: ''
         };
-        this._onEnd = opt.statistics || function () {
-            };
+        this._onEnd = opt.statistics || null;
     };
 
     //预转换
@@ -518,9 +517,10 @@
                 output: end.length,
                 percent: (end.length / start.length * 100).toFixed(2) + '%'
             },
-            //字典数
-            libraryEnNum: this._data.listEN.length,
-            libraryCnNum: this._data.listCN.length,
+            //提取字典数
+            libraryEn: this._data.listEN.length,
+            libraryCn: this._data.listCN.length,
+            //耗时
             time: Date.now() - startTime + 'ms'
         };
     };
@@ -546,7 +546,7 @@
         //拼装结果
         var result = this._data.result + '|||' + this._data.listEN.join(',') + '|||' + this._data.listCN.join(',');
         //统计效率
-        this._onEnd(this._statistics(startTime, source, result, 1));
+        this._onEnd && this._onEnd(this._statistics(startTime, source, result, 1));
         //立即清理
         this._data.source = this._data.result = '';
         this._data.listEN.length = this._data.listCN.length = 0;
@@ -583,7 +583,7 @@
         //console.log(this._data.listCN.length, this._data.listEN.length, this._data.listEN.join(','), this._data.listCN.join(','));
 
         //统计效率
-        this._onEnd(this._statistics(startTime, result, this._data.result, 2));
+        this._onEnd && this._onEnd(this._statistics(startTime, result, this._data.result, 2));
         //立即清理
         var re = this._data.result;
         this._data.source = this._data.result = '';
