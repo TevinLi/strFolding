@@ -2,7 +2,8 @@
 JS字符串“折叠”工具：压缩/解压一个字符串。compress and decompress a string with javascript.  
 
 ## 作用
-strFoling.js 不是一个代码压缩工具，不会删除空格换行；它是一个压缩文本字符串的工具，尤其是能压缩中文，无需任何依赖能直接在浏览器上执行。
+strFoling.js 是一个文本字符串压缩工具，尤其是能处理中文，无需任何依赖能直接在浏览器上执行  
+（它不是一个代码压缩工具，不会删除空格和换行 ）
 
 ## 工作原理
 strFoling.js 采用的是常规的字典算法来实现压缩，比如说：
@@ -12,6 +13,9 @@ strFoling.js 采用的是常规的字典算法来实现压缩，比如说：
 这个句子中，“大象”这一两字词出现了3次，strFoling.js 将找出大象这个词，并将文本替换为：
 
     十五只狮子攻击Ő，Ő发怒反击，没想到最终被Ő反败为胜||||||大象
+
+## Demo
+[https://tevinli.github.io/strFolding/](https://tevinli.github.io/strFolding/ "strFoling.js demo")
 
 ## 如何使用
 

@@ -504,7 +504,7 @@
         var sLong = byteLengthUtf8(start);
         var eLong = byteLengthUtf8(end);
         return {
-            type: type == 1 ? 'compress' : 'decompress',
+            type: type,
             //基于 utf-8 的字节统计，汉字算三个字节
             utf8: {
                 input: sLong,
@@ -546,7 +546,7 @@
         //拼装结果
         var result = this._data.result + '|||' + this._data.listEN.join(',') + '|||' + this._data.listCN.join(',');
         //统计效率
-        this._onEnd && this._onEnd(this._statistics(startTime, source, result, 1));
+        this._onEnd && this._onEnd(this._statistics(startTime, source, result, 'compress'));
         //立即清理
         this._data.source = this._data.result = '';
         this._data.listEN.length = this._data.listCN.length = 0;
@@ -583,7 +583,7 @@
         //console.log(this._data.listCN.length, this._data.listEN.length, this._data.listEN.join(','), this._data.listCN.join(','));
 
         //统计效率
-        this._onEnd && this._onEnd(this._statistics(startTime, result, this._data.result, 2));
+        this._onEnd && this._onEnd(this._statistics(startTime, result, this._data.result, 'deCompress'));
         //立即清理
         var re = this._data.result;
         this._data.source = this._data.result = '';
