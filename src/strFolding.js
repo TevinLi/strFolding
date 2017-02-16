@@ -266,6 +266,9 @@
     SF.prototype._unDuplicateChinese = function () {
         var that = this, i, item, library = {}, lib, list2C = [];
         var list = this._extChinese();
+        if (!list) {
+            return;
+        }
         //计算重复次数
         for (i = 0; item = list[i]; i++) {
             if (typeof library[item] == 'number') {
@@ -305,7 +308,7 @@
         var num;
         for (i = 0; item = list[i]; i++) {
             num = this._data.listCN.push(item.key) - 1;
-            this._replaceResult(item.key, num) || this._data.listCN.pop();
+            this._replaceResult(item.key, num, 'single') || this._data.listCN.pop();
         }
         //console.log(this._data.lib2C);
     };
@@ -342,8 +345,8 @@
         //处理
         var num;
         for (var j = 0; item = list[j]; j++) {
-            num = this._data.listEN.push(item);
-            this._replaceResult(item, num - 1) || this._data.listEN.pop();
+            num = this._data.listEN.push(item) - 1;
+            this._replaceResult(item, num) || this._data.listEN.pop();
         }
     };
 
@@ -461,6 +464,25 @@
         return false;
     };
 
+    //还原
+    SF.prototype._restoreResult = function (num, type) {
+        var that = this, code;
+        if (type == 'single') {
+            code = this._indexToCode(num, 'single');
+            //console.log(num, code, that._data.listCN[num]);
+            this._data.result = this._data.result.replace(new RegExp(code, 'g'), function () {
+                if (that._data.listCN[num] == '一笑很倾城') {
+                }
+                return that._data.listCN[num];
+            });
+        } else {
+            code = this._indexToCode(num);
+            this._data.result = this._data.result.replace(new RegExp(code, 'g'), function () {
+                return that._data.listEN[num];
+            });
+        }
+    };
+
     //压缩数据统计
     SF.prototype._statistics = function (startTime, source, result) {
         var sLong = source.length;
@@ -507,6 +529,27 @@
         if (typeof result != 'string') {
             throw new Error('StrFolding: 输入必须为字符串！');
         }
+        var that = this;
+        result = result.replace(/\|{3}([\u4e00-\u9fa5]{2,},?)*$/, function (m) {
+            that._data.listCN = m.replace('|||', '').split(',');
+            return '';
+        });
+        result = result.replace(/\|{3}(\d+\.\d+|[a-zA-Z0-9]{3,},?)*$/, function (m) {
+            that._data.listEN = m.replace('|||', '').split(',');
+            return '';
+        });
+        this._data.result = result;
+        for (var i = this._data.listCN.length - 1; i >= 0; i--) {
+            this._restoreResult(i, 'single');
+        }
+        for (var j = this._data.listEN.length - 1; j >= 0; j--) {
+            this._restoreResult(j);
+        }
+        //console.log(this._data.listCN.length, this._data.listEN.length, this._data.listEN.join(','), this._data.listCN.join(','));
+        var re = this._data.result;
+        this._data.source = this._data.result = '';
+        this._data.listEN.length = this._data.listCN.length = 0;
+        return re;
     };
 
     return win.StrFolding = SF;
