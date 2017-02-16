@@ -1,6 +1,6 @@
 /**
  * strFolding.js
- * @version 0.0.4
+ * @version 0.1.0
  * @author Tevin
  * @see {@link https://github.com/TevinLi/strFolding}
  * @license MIT - Released under the MIT license.
