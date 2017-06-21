@@ -1,8 +1,9 @@
 /**
- * strFolding.js
+ * 字符串折叠 strFolding.js
  * @version 0.1.0
- * @author Tevin
  * @see {@link https://github.com/TevinLi/strFolding}
+ *
+ * @author Tevin
  * @license MIT - Released under the MIT license.
  */
 
