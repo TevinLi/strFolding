@@ -15,7 +15,7 @@ strFoling.js 采用的是常规的字典算法来实现压缩，比如说：
     十五只狮子攻击Ő，Ő发怒反击，没想到最终被Ő反败为胜||||||大象
 
 ## Demo
-[https://tevinli.github.io/strFolding/](https://tevinli.github.io/strFolding/ "strFoling.js demo")
+[https://tevinli.github.io/strFolding/index.html](https://tevinli.github.io/strFolding/index.html "strFoling.js demo")
 
 ## 如何使用
 
